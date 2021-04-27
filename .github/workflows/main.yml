@@ -1,0 +1,42 @@
+name: Window create executable python
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: windows:7
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install pyinstaller
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install setuptools
+        python -m pip install -r requirements.txt
+        mkdir test_environment
+        COPY client.py test_environment
+        cd test_environment
+        python -m pip install pyinstaller
+        pyinstaller client.py --onefile
+        mkdir ../releases
+        dir ..
+        dir ../releases
+        dir
+        MOVE dist/* ../releases
+        cd ..
+        dir
+        Remove-Item test_environment -Recurse -Force -Confirm:$false
+        
+    - name: End of day. Adding all to git
+      run: |
+        git config --global user.email "user@xaker.tk"
+        git config --global user.name "Director"
+        git add *
+        git commit -m "Uploaded Debug App"
+        git push
