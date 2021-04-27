@@ -17,4 +17,4 @@ jobs:
     - name: Start all
       run: |
         cd releases
-        client
+        client.exe
