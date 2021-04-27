@@ -1,0 +1,5 @@
+telethon
+telebot
+requests
+flask
+netifaces
