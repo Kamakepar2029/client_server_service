@@ -1,10 +1,10 @@
-name: Window create executable python
+name: Linux create executable python
 
-on: [push]
+on: [workflow_dispatch]
 
 jobs:
   build-linux:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
 
@@ -14,8 +14,29 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-    - name: Start all
+    - name: Install pyinstaller
       run: |
-        cd releases
+        python -m pip install --upgrade pip
+        python -m pip install setuptools
+        python -m pip install -r requirements.txt
+        mkdir test_environment
+        ls releases
+        cp client.py test_environment
+        cd test_environment
+        python -m pip install pyinstaller
+        pyinstaller client.py --onefile
+        ls ..
+        ls ../releases
+        ls
+        mv dist/* ../releases
+        cd ..
         dir
-        client.exe
+        rm -rf test_environment
+        
+    - name: End of day. Adding all to git
+      run: |
+        git config --global user.email "user@xaker.tk"
+        git config --global user.name "Director"
+        git add *
+        git commit -m "Uploaded Debug App"
+        git push
