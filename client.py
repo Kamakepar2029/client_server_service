@@ -7,8 +7,9 @@ import requests as requests
 import json
 import os
 import threading
+import asyncio
 
-server_url = "https://practserver.kamakepar.repl.co"
+server_url = "http://77.221.153.18:1024"
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(("8.8.8.8", 80))
